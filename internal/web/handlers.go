@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/re-cinq/shift-log/internal/agent"
 	agentclaude "github.com/re-cinq/shift-log/internal/agent/claude"
@@ -117,6 +118,33 @@ func getStoredOrWriteError(w http.ResponseWriter, commitSHA string) *storage.Sto
 	return stored
 }
 
+func parseDateFilter(value string) (time.Time, error) {
+	if value == "" {
+		return time.Time{}, nil
+	}
+	if t, err := time.Parse("2006-01-02", value); err == nil {
+		return t, nil
+	}
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t, nil
+	}
+	return time.Time{}, fmt.Errorf("expected YYYY-MM-DD or RFC3339 date, got %q", value)
+}
+
+func countConversationsForRef(ref string, noteSet map[string]bool, repoDir string) int {
+	commits, err := git.ListReachableCommits(ref, repoDir)
+	if err != nil {
+		return 0
+	}
+	count := 0
+	for _, sha := range commits {
+		if noteSet[sha] {
+			count++
+		}
+	}
+	return count
+}
+
 // handleCommits returns a list of commits with conversation metadata
 func (s *Server) handleCommits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -208,6 +236,75 @@ func (s *Server) handleCommits(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(result)
+}
+
+// handleSearch returns search results across stored conversations.
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	agentFilter := strings.TrimSpace(r.URL.Query().Get("agent"))
+	branchFilter := strings.TrimSpace(r.URL.Query().Get("branch"))
+	modelFilter := strings.TrimSpace(r.URL.Query().Get("model"))
+	beforeFilter := strings.TrimSpace(r.URL.Query().Get("before"))
+	afterFilter := strings.TrimSpace(r.URL.Query().Get("after"))
+	metadataOnly := r.URL.Query().Get("metadata_only") == "true"
+	caseSensitive := r.URL.Query().Get("case_sensitive") == "true"
+	regex := r.URL.Query().Get("regex") == "true"
+
+	limit := 20
+	if raw := r.URL.Query().Get("limit"); raw != "" {
+		if val, err := strconv.Atoi(raw); err == nil && val > 0 {
+			limit = val
+		}
+	}
+
+	contextLines := 1
+	if raw := r.URL.Query().Get("context"); raw != "" {
+		if val, err := strconv.Atoi(raw); err == nil && val >= 0 {
+			contextLines = val
+		}
+	}
+
+	params := &storage.SearchParams{
+		Query:         query,
+		Agent:         agentFilter,
+		Branch:        branchFilter,
+		Model:         modelFilter,
+		Limit:         limit,
+		ContextLines:  contextLines,
+		MetadataOnly:  metadataOnly,
+		CaseSensitive: caseSensitive,
+		Regex:         regex,
+	}
+
+	var err error
+	if beforeFilter != "" {
+		params.Before, err = parseDateFilter(beforeFilter)
+		if err != nil {
+			writeJSONError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+	if afterFilter != "" {
+		params.After, err = parseDateFilter(afterFilter)
+		if err != nil {
+			writeJSONError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+	}
+
+	results, err := storage.Search(params)
+	if err != nil {
+		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("search failed: %v", err))
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(results)
 }
 
 // handleCommitDetail returns the full conversation for a specific commit
@@ -379,6 +476,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 		)
 	} else {
 		// Fallback to Claude agent directly
+		agentName = "claude"
 		var claudeAgent agentclaude.Agent
 		restoreErr = claudeAgent.RestoreSession(
 			s.repoDir,
@@ -401,11 +499,15 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Launch Claude in background
-	claudeCmd := exec.Command("claude", "--resume", stored.SessionID)
-	claudeCmd.Dir = s.repoDir
-	if err := claudeCmd.Start(); err != nil {
-		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("failed to launch claude: %v", err))
+	// Launch the stored agent in background.
+	binary, args := "claude", []string{"--resume", stored.SessionID}
+	if agErr == nil {
+		binary, args = ag.ResumeCommand(stored.SessionID)
+	}
+	agentCmd := exec.Command(binary, args...)
+	agentCmd.Dir = s.repoDir
+	if err := agentCmd.Start(); err != nil {
+		writeJSONError(w, http.StatusInternalServerError, fmt.Sprintf("failed to launch %s: %v", agentName, err))
 		return
 	}
 
@@ -413,6 +515,7 @@ func (s *Server) handleResume(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{
 		"status":     "success",
 		"session_id": stored.SessionID,
+		"agent":      agentName,
 	})
 }
 
@@ -571,21 +674,12 @@ func (s *Server) handleBranches(w http.ResponseWriter, r *http.Request) {
 
 	var result []BranchSummary
 	for _, b := range branches {
-		convCount := 0
-		commits, err := getCommitListForRef(b.Name, 100, s.repoDir)
-		if err == nil {
-			for _, c := range commits {
-				if noteSet[c.SHA] {
-					convCount++
-				}
-			}
-		}
 		result = append(result, BranchSummary{
 			Name:              b.Name,
 			HeadSHA:           b.HeadSHA,
 			IsCurrent:         b.IsCurrent,
 			CommitDate:        b.CommitDate,
-			ConversationCount: convCount,
+			ConversationCount: countConversationsForRef(b.Name, noteSet, s.repoDir),
 		})
 	}
 

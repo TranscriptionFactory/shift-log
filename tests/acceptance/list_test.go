@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -139,6 +140,31 @@ var _ = Describe("List Command", func() {
 
 			// Should contain "Initial commit" from our test setup
 			Expect(stdout).To(ContainSubstring("Initial commit"))
+		})
+
+		It("supports JSON output", func() {
+			commitSHA := storeConversation("session-json-test")
+
+			stdout, _, err := testutil.RunShiftlogInDir(repo.Path, "list", "--json")
+			Expect(err).NotTo(HaveOccurred())
+
+			var results []map[string]interface{}
+			Expect(json.Unmarshal([]byte(stdout), &results)).To(Succeed())
+			Expect(results).NotTo(BeEmpty())
+			Expect(results[0]["sha"]).To(Equal(commitSHA))
+			Expect(results[0]["agent"]).To(Equal("claude"))
+		})
+
+		It("supports branch filtering", func() {
+			storeConversation("session-branch-test")
+
+			stdout, _, err := testutil.RunShiftlogInDir(repo.Path, "list", "--branch", "master")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("Initial commit"))
+
+			stdout, _, err = testutil.RunShiftlogInDir(repo.Path, "list", "--branch", "feature-x")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("no conversations found"))
 		})
 	})
 

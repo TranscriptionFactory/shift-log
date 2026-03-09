@@ -1,6 +1,7 @@
 package acceptance_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,6 +150,29 @@ var _ = Describe("Search Command", func() {
 			// Should not contain match labels like [user] or [assistant]
 			Expect(stdout).NotTo(ContainSubstring("[user]"))
 			Expect(stdout).NotTo(ContainSubstring("[assistant]"))
+		})
+	})
+
+	Describe("enhanced outputs", func() {
+		It("supports JSON output", func() {
+			commitSHA := storeConversation("session-search-json")
+
+			stdout, _, err := testutil.RunShiftlogInDir(repo.Path, "search", "--json", "help")
+			Expect(err).NotTo(HaveOccurred())
+
+			var results []map[string]interface{}
+			Expect(json.Unmarshal([]byte(stdout), &results)).To(Succeed())
+			Expect(results).NotTo(BeEmpty())
+			Expect(results[0]["commit_sha"]).To(Equal(commitSHA))
+		})
+
+		It("can show the top matching conversation directly", func() {
+			storeConversation("session-search-show")
+
+			stdout, _, err := testutil.RunShiftlogInDir(repo.Path, "search", "--show", "help me with a task")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(stdout).To(ContainSubstring("Conversation for"))
+			Expect(stdout).To(ContainSubstring("User:"))
 		})
 	})
 

@@ -201,6 +201,25 @@ func MergeBase(repoDir, refA, refB string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
+// ListReachableCommits returns all commits reachable from a ref in reverse
+// chronological order. If repoDir is non-empty, the git command runs there.
+func ListReachableCommits(ref, repoDir string) ([]string, error) {
+	cmd := exec.Command("git", "rev-list", ref)
+	if repoDir != "" {
+		cmd.Dir = repoDir
+	}
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	trimmed := strings.TrimSpace(string(output))
+	if trimmed == "" {
+		return nil, nil
+	}
+	return strings.Split(trimmed, "\n"), nil
+}
+
 // GetCommitInfo returns the commit message and author date for a commit
 func GetCommitInfo(commitSHA string) (message string, date string, err error) {
 	// Get commit message (first line)

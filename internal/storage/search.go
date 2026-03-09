@@ -27,22 +27,22 @@ type SearchParams struct {
 
 // SearchMatch represents a single text match within a conversation.
 type SearchMatch struct {
-	EntryType string // "user", "assistant", "system"
-	BlockType string // "text", "tool_use", "tool_result", "thinking"
-	ToolName  string // populated for tool_use blocks
-	Snippet   string // text snippet with context
+	EntryType string `json:"entry_type"` // "user", "assistant", "system"
+	BlockType string `json:"block_type"` // "text", "tool_use", "tool_result", "thinking"
+	ToolName  string `json:"tool_name"`  // populated for tool_use blocks
+	Snippet   string `json:"snippet"`    // text snippet with context
 }
 
 // SearchResult represents a conversation that matched the search.
 type SearchResult struct {
-	CommitSHA  string
-	CommitDate string
-	CommitMsg  string
-	Agent      string
-	Branch     string
-	Model      string
-	MsgCount   int
-	Matches    []SearchMatch
+	CommitSHA  string        `json:"commit_sha"`
+	CommitDate string        `json:"commit_date"`
+	CommitMsg  string        `json:"commit_msg"`
+	Agent      string        `json:"agent"`
+	Branch     string        `json:"branch"`
+	Model      string        `json:"model"`
+	MsgCount   int           `json:"msg_count"`
+	Matches    []SearchMatch `json:"matches,omitempty"`
 }
 
 // maxMatchesPerConversation caps how many matches we report per conversation.

@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -22,6 +24,9 @@ var (
 	searchMetadataOnly  bool
 	searchCaseSensitive bool
 	searchRegex         bool
+	searchJSON          bool
+	searchShow          bool
+	currentSearchQuery  string
 )
 
 // ANSI color codes (local to avoid coupling with agent/render.go)
@@ -63,6 +68,8 @@ func init() {
 	searchCmd.Flags().BoolVar(&searchMetadataOnly, "metadata-only", false, "skip transcript search, filter by metadata only")
 	searchCmd.Flags().BoolVar(&searchCaseSensitive, "case-sensitive", false, "case-sensitive matching (default: insensitive)")
 	searchCmd.Flags().BoolVar(&searchRegex, "regex", false, "treat query as a regular expression")
+	searchCmd.Flags().BoolVar(&searchJSON, "json", false, "output results as JSON")
+	searchCmd.Flags().BoolVar(&searchShow, "show", false, "show the top matching conversation instead of listing matches")
 	rootCmd.AddCommand(searchCmd)
 }
 
@@ -75,12 +82,16 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		query = args[0]
 	}
+	currentSearchQuery = query
 
 	// Require at least a query or one filter flag
 	hasFilter := searchAgent != "" || searchBranch != "" || searchModel != "" ||
 		searchBefore != "" || searchAfter != ""
 	if query == "" && !hasFilter {
 		return fmt.Errorf("provide a search query or at least one filter flag (--agent, --branch, --model, --before, --after)")
+	}
+	if searchJSON && searchShow {
+		return fmt.Errorf("--json and --show are mutually exclusive")
 	}
 
 	params := &storage.SearchParams{
@@ -117,8 +128,19 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(results) == 0 {
+		if searchJSON {
+			return json.NewEncoder(os.Stdout).Encode(results)
+		}
 		fmt.Println("no matching conversations found")
 		return nil
+	}
+
+	if searchJSON {
+		return json.NewEncoder(os.Stdout).Encode(results)
+	}
+
+	if searchShow {
+		return showConversation(results[0].CommitSHA, false)
 	}
 
 	useColor := os.Getenv("NO_COLOR") == ""
@@ -188,10 +210,70 @@ func formatMatchLabel(m storage.SearchMatch) string {
 }
 
 func highlightMatch(line string, _ bool) string {
-	// Highlighting individual matches in the snippet would require carrying
-	// match offsets through the pipeline. For now, just return the line as-is.
-	// The snippet context already helps users find what they're looking for.
-	return line
+	if line == "" || os.Getenv("NO_COLOR") != "" || searchMetadataOnly || searchJSON {
+		return line
+	}
+	if searchRegex {
+		pattern := searchQueryPattern()
+		if pattern == "" {
+			return line
+		}
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return line
+		}
+		return re.ReplaceAllStringFunc(line, func(match string) string {
+			return ansiBold + ansiYellow + match + ansiReset
+		})
+	}
+
+	query := searchQueryPattern()
+	if query == "" {
+		return line
+	}
+
+	haystack := line
+	needle := query
+	if !searchCaseSensitive {
+		haystack = strings.ToLower(line)
+		needle = strings.ToLower(query)
+	}
+
+	var b strings.Builder
+	last := 0
+	for {
+		idx := strings.Index(haystack[last:], needle)
+		if idx < 0 {
+			b.WriteString(line[last:])
+			break
+		}
+		start := last + idx
+		end := start + len(query)
+		b.WriteString(line[last:start])
+		b.WriteString(ansiBold)
+		b.WriteString(ansiYellow)
+		b.WriteString(line[start:end])
+		b.WriteString(ansiReset)
+		last = end
+	}
+	return b.String()
+}
+
+func searchQueryPattern() string {
+	if searchRegex {
+		if searchQuery := strings.TrimSpace(searchQueryValue()); searchQuery != "" {
+			if searchCaseSensitive {
+				return searchQuery
+			}
+			return "(?i)" + searchQuery
+		}
+		return ""
+	}
+	return searchQueryValue()
+}
+
+func searchQueryValue() string {
+	return strings.TrimSpace(currentSearchQuery)
 }
 
 func stripANSI(s string) string {

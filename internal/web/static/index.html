@@ -88,6 +88,45 @@
             font-family: 'SF Mono', Monaco, 'Courier New', monospace;
         }
 
+        .navbar-tools {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .navbar-search {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .navbar-search input {
+            width: 220px;
+            padding: 7px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .navbar-search button,
+        .nav-action-btn {
+            padding: 7px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .navbar-search button:hover,
+        .nav-action-btn:hover {
+            filter: brightness(1.08);
+        }
+
         /* Overview container — scrollable viewport */
         #overview-container {
             flex: 1;
@@ -733,6 +772,17 @@
             display: flex;
         }
 
+        .search-match-preview {
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            background: rgba(233, 69, 96, 0.08);
+            border: 1px solid rgba(233, 69, 96, 0.18);
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+        }
+
         .meta-badge {
             display: inline-flex;
             align-items: center;
@@ -761,7 +811,15 @@
         <div class="navbar-tabs" id="navbar-tabs">
             <button class="navbar-tab active" id="nav-branches" onclick="switchView('overview')">Branches</button>
         </div>
-        <span class="navbar-branch-indicator" id="branch-indicator"></span>
+        <div class="navbar-tools">
+            <button class="nav-action-btn" id="load-more-btn" style="display: none;" onclick="loadMoreBranchHistory()">Load More History</button>
+            <form class="navbar-search" id="search-form">
+                <input id="search-input" type="search" placeholder="Search conversations" />
+                <button type="submit">Search</button>
+                <button type="button" id="search-clear-btn" onclick="clearSearch()">Clear</button>
+            </form>
+            <span class="navbar-branch-indicator" id="branch-indicator"></span>
+        </div>
     </nav>
 
     <!-- Overview container (vertical columns) -->
@@ -846,6 +904,8 @@
         let currentView = 'overview'; // 'overview' or 'detail'
         let currentBranch = null;
         let branchData = [];
+        let currentSearchQuery = '';
+        let graphPerBranch = 30;
 
         const LANE_COLORS = [
             '#e94560', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6',
@@ -860,12 +920,14 @@
             const detailEl = document.getElementById('detail-container');
             const navBranches = document.getElementById('nav-branches');
             const indicator = document.getElementById('branch-indicator');
+            const loadMoreBtn = document.getElementById('load-more-btn');
 
             if (view === 'overview') {
                 overviewEl.classList.remove('hidden');
                 detailEl.classList.add('hidden');
                 navBranches.classList.add('active');
                 indicator.textContent = '';
+                loadMoreBtn.style.display = branchData.length > 1 ? 'inline-flex' : 'none';
                 // Reset scroll position
                 const oc = document.getElementById('overview-container');
                 if (oc) { oc.scrollTop = 0; oc.scrollLeft = 0; }
@@ -873,18 +935,21 @@
                 overviewEl.classList.add('hidden');
                 detailEl.classList.remove('hidden');
                 navBranches.classList.remove('active');
-                indicator.textContent = currentBranch ? currentBranch : '';
+                indicator.textContent = currentSearchQuery ? `search: ${currentSearchQuery}` : (currentBranch ? currentBranch : '');
+                loadMoreBtn.style.display = 'none';
             }
         }
 
         function drillIntoBranch(branchName) {
             currentBranch = branchName;
+            currentSearchQuery = '';
             switchView('detail');
             fetchCommitsForBranch(branchName);
         }
 
         function drillIntoCommit(branchName, sha) {
             currentBranch = branchName;
+            currentSearchQuery = '';
             switchView('detail');
             fetchCommitsForBranch(branchName).then(() => {
                 selectCommit(sha);
@@ -917,13 +982,18 @@
 
         async function fetchBranchGraph() {
             try {
-                const response = await fetch('/api/graph/branches?per_branch=30');
+                const response = await fetch(`/api/graph/branches?per_branch=${graphPerBranch}`);
                 const data = await response.json();
                 renderOverview(data);
             } catch (error) {
                 console.error('Failed to fetch branch graph:', error);
                 showStatus('Failed to load branch graph', 'error');
             }
+        }
+
+        function loadMoreBranchHistory() {
+            graphPerBranch += 30;
+            fetchBranchGraph();
         }
 
         const COL_WIDTH = 200; // px per branch column
@@ -1085,6 +1155,7 @@
             try {
                 const response = await fetch('/api/commits');
                 commits = await response.json();
+                currentSearchQuery = '';
                 renderCommits();
             } catch (error) {
                 console.error('Failed to fetch commits:', error);
@@ -1097,10 +1168,54 @@
                 const url = `/api/commits?branch=${encodeURIComponent(branchName)}`;
                 const response = await fetch(url);
                 commits = await response.json();
+                currentSearchQuery = '';
                 renderCommits();
             } catch (error) {
                 console.error('Failed to fetch commits for branch:', error);
                 showStatus('Failed to load commits', 'error');
+            }
+        }
+
+        async function fetchSearchResults(query) {
+            currentSearchQuery = query.trim();
+            if (!currentSearchQuery) {
+                clearSearch();
+                return;
+            }
+
+            switchView('detail');
+            currentBranch = null;
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(currentSearchQuery)}&limit=50`);
+                commits = await response.json();
+                renderCommits();
+                if (commits.length > 0) {
+                    selectCommit(commits[0].commit_sha || commits[0].sha);
+                } else {
+                    document.getElementById('conversation-title').textContent = 'Search Results';
+                    document.getElementById('conversation-meta').classList.remove('visible');
+                    document.getElementById('conversation-content').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">&#x1F50D;</div>
+                            <p>No conversations matched "${escapeHtml(currentSearchQuery)}"</p>
+                        </div>
+                    `;
+                }
+                switchView('detail');
+            } catch (error) {
+                console.error('Failed to search conversations:', error);
+                showStatus('Failed to search conversations', 'error');
+            }
+        }
+
+        function clearSearch() {
+            currentSearchQuery = '';
+            document.getElementById('search-input').value = '';
+            if (currentBranch) {
+                fetchCommitsForBranch(currentBranch);
+            } else {
+                fetchCommits();
             }
         }
 
@@ -1112,20 +1227,23 @@
                 return;
             }
 
-            const conversationCount = commits.filter(c => c.has_conversation).length;
-            document.getElementById('commit-count').textContent = `${conversationCount} with conversations`;
+            const conversationCount = commits.filter(c => c.has_conversation !== false).length;
+            document.getElementById('commit-count').textContent = currentSearchQuery
+                ? `${commits.length} search results`
+                : `${conversationCount} with conversations`;
 
             list.innerHTML = commits.map(commit => `
-                <div class="commit-item ${commit.has_conversation ? 'has-conversation' : ''}"
-                     data-sha="${commit.sha}"
-                     onclick="selectCommit('${commit.sha}')">
+                <div class="commit-item ${(commit.has_conversation !== false) ? 'has-conversation' : ''}"
+                     data-sha="${commit.commit_sha || commit.sha}"
+                     onclick="selectCommit('${commit.commit_sha || commit.sha}')">
                     <div class="commit-sha">
-                        ${commit.sha.substring(0, 7)}
-                        ${commit.has_conversation ? `<span class="badge">${commit.message_count} msgs</span>` : ''}
+                        ${(commit.commit_sha || commit.sha).substring(0, 7)}
+                        ${(commit.has_conversation !== false) ? `<span class="badge">${commit.msg_count || commit.message_count || 0} msgs</span>` : ''}
                         ${commit.effort && commit.effort.turns > 0 ? `<span class="badge" style="background-color: var(--bg-tertiary);">${commit.effort.turns} turns</span>` : ''}
                     </div>
-                    <div class="commit-message">${escapeHtml(commit.message)}</div>
-                    <div class="commit-meta">${formatDate(commit.date)} by ${escapeHtml(commit.author)}</div>
+                    <div class="commit-message">${escapeHtml(commit.commit_msg || commit.message)}</div>
+                    <div class="commit-meta">${formatDate(commit.commit_date || commit.date)}${commit.author ? ` by ${escapeHtml(commit.author)}` : ''}</div>
+                    ${commit.matches && commit.matches.length > 0 ? `<div class="search-match-preview">${escapeHtml(commit.matches[0].snippet)}</div>` : ''}
                 </div>
             `).join('');
         }
@@ -1138,16 +1256,16 @@
                 el.classList.toggle('selected', el.dataset.sha === sha);
             });
 
-            const commit = commits.find(c => c.sha === sha);
+            const commit = commits.find(c => (c.commit_sha || c.sha) === sha);
             if (!commit) return;
 
             document.getElementById('conversation-title').textContent =
-                `${commit.message.substring(0, 50)}${commit.message.length > 50 ? '...' : ''}`;
+                `${(commit.commit_msg || commit.message).substring(0, 50)}${(commit.commit_msg || commit.message).length > 50 ? '...' : ''}`;
 
             const resumeBtn = document.getElementById('resume-btn');
-            resumeBtn.disabled = !commit.has_conversation;
+            resumeBtn.disabled = commit.has_conversation === false;
 
-            if (!commit.has_conversation) {
+            if (commit.has_conversation === false) {
                 document.getElementById('conversation-meta').classList.remove('visible');
                 document.getElementById('conversation-content').innerHTML = `
                     <div class="empty-state">
@@ -1453,7 +1571,8 @@
                 });
 
                 if (response.ok) {
-                    showStatus('Session resumed! Claude is starting...', 'success');
+                    const data = await response.json();
+                    showStatus(`Session resumed! ${data.agent || 'Agent'} is starting...`, 'success');
                 } else if (response.status === 409) {
                     showStatus('Cannot resume: uncommitted changes in working directory', 'error');
                 } else {
@@ -1543,6 +1662,10 @@
         // --- Initialize ---
         async function init() {
             document.getElementById('resume-btn').addEventListener('click', resumeSession);
+            document.getElementById('search-form').addEventListener('submit', (event) => {
+                event.preventDefault();
+                fetchSearchResults(document.getElementById('search-input').value);
+            });
 
             const branches = await fetchBranches();
             if (!branches || branches.length <= 1) {
@@ -1556,6 +1679,7 @@
                 }
                 // Hide the branches tab for single-branch repos
                 document.getElementById('nav-branches').style.display = 'none';
+                document.getElementById('load-more-btn').style.display = 'none';
             } else {
                 switchView('overview');
                 fetchBranchGraph();

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/re-cinq/shift-log/internal/git"
 	"github.com/re-cinq/shift-log/internal/storage"
@@ -78,6 +79,20 @@ func (r *testRepo) addConversationWithEffort(commitSHA, sessionID string, transc
 		r.t.Fatal(err)
 	}
 	stored.Effort = effort
+	data, err := stored.Marshal()
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	r.git("notes", "--ref", git.NotesRef, "add", "-f", "-m", string(data), commitSHA)
+}
+
+func (r *testRepo) addConversationForAgent(commitSHA, sessionID, agentName string, transcriptData []byte, messageCount int) {
+	r.t.Helper()
+	stored, err := storage.NewStoredConversation(sessionID, r.path, "master", messageCount, transcriptData)
+	if err != nil {
+		r.t.Fatal(err)
+	}
+	stored.Agent = agentName
 	data, err := stored.Marshal()
 	if err != nil {
 		r.t.Fatal(err)
@@ -738,6 +753,54 @@ func TestHandleResume(t *testing.T) {
 			t.Errorf("status: want 409, got %d: %s", w.Code, w.Body.String())
 		}
 	})
+
+	t.Run("launches the stored agent on successful resume", func(t *testing.T) {
+		cleanRepo := newTestRepo(t)
+		chdir(t, cleanRepo.path)
+
+		cleanRepo.writeFile("agent.txt", "ok")
+		sha := cleanRepo.commit("Agent commit")
+		cleanRepo.addConversationForAgent(sha, "sess-codex", "codex", sampleTranscript(), 2)
+
+		mockDir := t.TempDir()
+		invocationPath := filepath.Join(mockDir, "codex-invocation.txt")
+		mockBinary := filepath.Join(mockDir, "codex")
+		script := "#!/bin/sh\nprintf '%s ' \"$@\" > \"" + invocationPath + "\"\n"
+		if err := os.WriteFile(mockBinary, []byte(script), 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		t.Setenv("PATH", mockDir+":"+os.Getenv("PATH"))
+		t.Setenv("HOME", t.TempDir())
+
+		srv := NewServer(0, cleanRepo.path)
+		req := httptest.NewRequest("POST", "/api/resume/"+sha, nil)
+		w := httptest.NewRecorder()
+		srv.mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("status: want 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var resp map[string]string
+		decodeJSON(t, w, &resp)
+		if resp["agent"] != "codex" {
+			t.Fatalf("agent: want codex, got %q", resp["agent"])
+		}
+
+		var invocation string
+		for i := 0; i < 20; i++ {
+			data, err := os.ReadFile(invocationPath)
+			if err == nil {
+				invocation = string(data)
+				break
+			}
+			time.Sleep(25 * time.Millisecond)
+		}
+		if !strings.Contains(invocation, "resume sess-codex") {
+			t.Fatalf("expected codex resume invocation, got %q", invocation)
+		}
+	})
 }
 
 // --- Static file / embedded HTML tests ---
@@ -812,6 +875,8 @@ func TestStaticFileServing(t *testing.T) {
 			`id="conversation-content"`,
 			`id="resume-btn"`,
 			`id="view-toggle"`,
+			`id="search-input"`,
+			`id="load-more-btn"`,
 			`id="conversation-title"`,
 			`id="incremental-info"`,
 			`class="commit-panel"`,
@@ -960,6 +1025,81 @@ func TestHandleBranches(t *testing.T) {
 
 		if w.Code != http.StatusMethodNotAllowed {
 			t.Errorf("status: want 405, got %d", w.Code)
+		}
+	})
+
+	t.Run("counts conversations beyond the most recent 100 commits", func(t *testing.T) {
+		longRepo := newTestRepo(t)
+		chdir(t, longRepo.path)
+
+		longRepo.writeFile("seed.txt", "seed")
+		firstSHA := longRepo.commit("Seed commit")
+		longRepo.addConversation(firstSHA, "seed-session", sampleTranscript(), 2)
+
+		for i := 0; i < 104; i++ {
+			longRepo.writeFile(fmt.Sprintf("file-%03d.txt", i), fmt.Sprintf("value-%03d", i))
+			longRepo.commit(fmt.Sprintf("Commit %03d", i))
+		}
+
+		lastSHA := longRepo.git("rev-parse", "HEAD")
+		longRepo.addConversation(lastSHA, "head-session", sampleTranscript(), 2)
+
+		srv := NewServer(0, longRepo.path)
+		req := httptest.NewRequest("GET", "/api/branches", nil)
+		w := httptest.NewRecorder()
+		srv.mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("status: want 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var branches []BranchSummary
+		decodeJSON(t, w, &branches)
+
+		for _, branch := range branches {
+			if branch.Name == "master" && branch.ConversationCount != 2 {
+				t.Fatalf("master conversation_count: want 2, got %d", branch.ConversationCount)
+			}
+		}
+	})
+}
+
+func TestHandleSearch(t *testing.T) {
+	repo := newTestRepo(t)
+	chdir(t, repo.path)
+
+	repo.writeFile("a.txt", "a")
+	sha := repo.commit("Searchable commit")
+	repo.addConversation(sha, "session-search", sampleTranscript(), 2)
+
+	srv := NewServer(0, repo.path)
+
+	t.Run("returns matching conversations", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/search?q=help", nil)
+		w := httptest.NewRecorder()
+		srv.mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Fatalf("status: want 200, got %d: %s", w.Code, w.Body.String())
+		}
+
+		var results []storage.SearchResult
+		decodeJSON(t, w, &results)
+		if len(results) != 1 {
+			t.Fatalf("expected 1 result, got %d", len(results))
+		}
+		if results[0].CommitSHA != sha {
+			t.Fatalf("commit SHA: want %s, got %s", sha, results[0].CommitSHA)
+		}
+	})
+
+	t.Run("rejects invalid before date", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/api/search?before=nope", nil)
+		w := httptest.NewRecorder()
+		srv.mux.ServeHTTP(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("status: want 400, got %d", w.Code)
 		}
 	})
 }

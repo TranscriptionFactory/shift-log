@@ -44,15 +44,17 @@ func init() {
 }
 
 func runShow(cmd *cobra.Command, args []string) error {
-	// Verify we're in a git repository
-	if err := git.RequireGitRepo(); err != nil {
-		return err
-	}
-
-	// Determine the ref to show
 	ref := "HEAD"
 	if len(args) > 0 {
 		ref = args[0]
+	}
+	return showConversation(ref, showFull)
+}
+
+func showConversation(ref string, full bool) error {
+	// Verify we're in a git repository
+	if err := git.RequireGitRepo(); err != nil {
+		return err
 	}
 
 	// Resolve the reference to a full SHA
@@ -91,7 +93,7 @@ func runShow(cmd *cobra.Command, args []string) error {
 	var lastEntryUUID string
 	var isIncremental bool
 
-	if !showFull {
+	if !full {
 		parentSHA, lastEntryUUID = storage.FindParentConversationBoundary(fullSHA, stored.SessionID)
 		isIncremental = lastEntryUUID != ""
 	}

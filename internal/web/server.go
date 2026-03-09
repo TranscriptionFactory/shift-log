@@ -38,6 +38,7 @@ func (s *Server) setupRoutes() {
 	// API endpoints
 	s.mux.HandleFunc("/api/commits", s.handleCommits)
 	s.mux.HandleFunc("/api/commits/", s.handleCommitDetail)
+	s.mux.HandleFunc("/api/search", s.handleSearch)
 	s.mux.HandleFunc("/api/graph", s.handleGraph)
 	s.mux.HandleFunc("/api/resume/", s.handleResume)
 	s.mux.HandleFunc("/api/branches", s.handleBranches)
