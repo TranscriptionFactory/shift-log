@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # shiftlog installation script
-# Usage: curl -fsSL https://raw.githubusercontent.com/re-cinq/shift-log/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/TranscriptionFactory/shift-log/main/scripts/install.sh | bash
 #
 # This script must be EXECUTED, never SOURCED
 # WRONG: source install.sh (will exit your shell on errors)
@@ -11,9 +11,9 @@
 
 set -e
 
-GITHUB_REPO="re-cinq/shift-log"
+GITHUB_REPO="TranscriptionFactory/shift-log"
 BINARY_NAME="shiftlog"
-GO_MODULE="github.com/re-cinq/shift-log"
+GO_MODULE="github.com/TranscriptionFactory/shift-log"
 MIN_GO_MAJOR=1
 MIN_GO_MINOR=24
 
