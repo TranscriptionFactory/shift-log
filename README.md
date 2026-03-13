@@ -5,7 +5,7 @@ Save, view, and search coding agent conversation history, persisted as Git Notes
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/re-cinq/shift-log/master/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/TranscriptionFactory/shift-log/master/scripts/install.sh | bash
 ```
 
 ```bash
@@ -172,4 +172,4 @@ You can also run `shiftlog remap` at any time — it reports how many notes were
 
 ## License
 
-[AI Native Application License (AINAL)](https://github.com/re-cinq/ai-native-application-license) — see [LICENSE](LICENSE).
+[AI Native Application License (AINAL)](https://github.com/TranscriptionFactory/ai-native-application-license) — see [LICENSE](LICENSE).

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/storage"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/storage"
 )
 
 // testRepo is a temporary git repository for handler tests.

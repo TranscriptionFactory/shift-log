@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/re-cinq/shift-log/internal/cli"
-	"github.com/re-cinq/shift-log/internal/session"
+	"github.com/TranscriptionFactory/shift-log/internal/cli"
+	"github.com/TranscriptionFactory/shift-log/internal/session"
 	"github.com/spf13/cobra"
 )
 

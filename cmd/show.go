@@ -5,14 +5,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	_ "github.com/re-cinq/shift-log/internal/agent/claude"   // register Claude agent
-	_ "github.com/re-cinq/shift-log/internal/agent/codex"    // register Codex agent
-	_ "github.com/re-cinq/shift-log/internal/agent/copilot"  // register Copilot agent
-	_ "github.com/re-cinq/shift-log/internal/agent/gemini"   // register Gemini agent
-	_ "github.com/re-cinq/shift-log/internal/agent/opencode" // register OpenCode agent
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/storage"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/claude"   // register Claude agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/codex"    // register Codex agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/copilot"  // register Copilot agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/gemini"   // register Gemini agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/opencode" // register OpenCode agent
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/storage"
 	"github.com/spf13/cobra"
 )
 

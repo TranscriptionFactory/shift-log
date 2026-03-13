@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/re-cinq/shift-log/tests/acceptance/testutil"
+	"github.com/TranscriptionFactory/shift-log/tests/acceptance/testutil"
 )
 
 var _ = Describe("Worktree isolation", func() {

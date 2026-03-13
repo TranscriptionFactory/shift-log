@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	agentclaude "github.com/re-cinq/shift-log/internal/agent/claude"
-	_ "github.com/re-cinq/shift-log/internal/agent/gemini"   // register Gemini agent
-	_ "github.com/re-cinq/shift-log/internal/agent/opencode" // register OpenCode agent
-	"github.com/re-cinq/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	agentclaude "github.com/TranscriptionFactory/shift-log/internal/agent/claude"
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/gemini"   // register Gemini agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/opencode" // register OpenCode agent
+	"github.com/TranscriptionFactory/shift-log/internal/git"
 )
 
 // GetStoredConversation retrieves and parses a stored conversation from a commit's git note.

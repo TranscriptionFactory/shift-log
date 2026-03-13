@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/re-cinq/shift-log/cmd"
+	"github.com/TranscriptionFactory/shift-log/cmd"
 )
 
 func main() {

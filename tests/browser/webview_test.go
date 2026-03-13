@@ -14,9 +14,9 @@ import (
 
 	"github.com/chromedp/chromedp"
 
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/storage"
-	"github.com/re-cinq/shift-log/internal/web"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/storage"
+	"github.com/TranscriptionFactory/shift-log/internal/web"
 )
 
 // testRepo is a temporary git repository for browser tests.

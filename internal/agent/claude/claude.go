@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/agent"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
 )
 
 func init() {

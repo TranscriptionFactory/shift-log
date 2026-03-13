@@ -16,7 +16,7 @@ echo "1. Checking prerequisites..."
 
 if ! command -v shiftlog &> /dev/null; then
     echo "   ERROR: 'shiftlog' not found in PATH"
-    echo "   Install with: go install github.com/re-cinq/shiftlog@latest"
+    echo "   Install with: go install github.com/TranscriptionFactory/shiftlog@latest"
     exit 1
 fi
 echo "   ✓ shiftlog is in PATH"

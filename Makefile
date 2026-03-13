@@ -3,7 +3,7 @@
 GO := CGO_ENABLED=0 go
 BINARY := shiftlog
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS := -ldflags "-X github.com/re-cinq/shift-log/cmd.version=$(VERSION)"
+LDFLAGS := -ldflags "-X github.com/TranscriptionFactory/shift-log/cmd.version=$(VERSION)"
 
 # Lint runs before build and test to catch issues early
 lint:

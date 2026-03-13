@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/util"
+	"github.com/TranscriptionFactory/shift-log/internal/util"
 )
 
 // ActiveSession represents the currently active coding agent session

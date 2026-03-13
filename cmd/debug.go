@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/re-cinq/shift-log/internal/config"
+	"github.com/TranscriptionFactory/shift-log/internal/config"
 	"github.com/spf13/cobra"
 )
 

@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	_ "github.com/re-cinq/shift-log/internal/agent/claude"   // register Claude agent
-	_ "github.com/re-cinq/shift-log/internal/agent/codex"    // register Codex agent
-	_ "github.com/re-cinq/shift-log/internal/agent/copilot"  // register Copilot agent
-	_ "github.com/re-cinq/shift-log/internal/agent/gemini"   // register Gemini agent
-	_ "github.com/re-cinq/shift-log/internal/agent/opencode" // register OpenCode agent
-	"github.com/re-cinq/shift-log/internal/cli"
-	"github.com/re-cinq/shift-log/internal/config"
-	"github.com/re-cinq/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/claude"   // register Claude agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/codex"    // register Codex agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/copilot"  // register Copilot agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/gemini"   // register Gemini agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/opencode" // register OpenCode agent
+	"github.com/TranscriptionFactory/shift-log/internal/cli"
+	"github.com/TranscriptionFactory/shift-log/internal/config"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
 	"github.com/spf13/cobra"
 )
 
@@ -111,7 +111,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 		fmt.Println()
 		fmt.Println("⚠ Warning: 'shiftlog' is not in your PATH.")
 		fmt.Println("  The hook will not work until shiftlog is installed.")
-		fmt.Println("  Install with: go install github.com/re-cinq/shift-log@latest")
+		fmt.Println("  Install with: go install github.com/TranscriptionFactory/shift-log@latest")
 	}
 
 	fmt.Println()

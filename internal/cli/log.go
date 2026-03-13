@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/re-cinq/shift-log/internal/config"
+	"github.com/TranscriptionFactory/shift-log/internal/config"
 )
 
 var (

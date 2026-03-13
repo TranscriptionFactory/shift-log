@@ -7,14 +7,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	_ "github.com/re-cinq/shift-log/internal/agent/claude"   // register Claude agent
-	_ "github.com/re-cinq/shift-log/internal/agent/codex"    // register Codex agent
-	_ "github.com/re-cinq/shift-log/internal/agent/copilot"  // register Copilot agent
-	_ "github.com/re-cinq/shift-log/internal/agent/gemini"   // register Gemini agent
-	_ "github.com/re-cinq/shift-log/internal/agent/opencode" // register OpenCode agent
-	"github.com/re-cinq/shift-log/internal/config"
-	"github.com/re-cinq/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/claude"   // register Claude agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/codex"    // register Codex agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/copilot"  // register Copilot agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/gemini"   // register Gemini agent
+	_ "github.com/TranscriptionFactory/shift-log/internal/agent/opencode" // register OpenCode agent
+	"github.com/TranscriptionFactory/shift-log/internal/config"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
 	"github.com/spf13/cobra"
 )
 
@@ -65,7 +65,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 		fmt.Println("FAIL")
 		fmt.Println("  'shiftlog' is not in your PATH")
 		fmt.Println("  Coding agent hooks will not be able to find shiftlog")
-		fmt.Println("  Install with: go install github.com/re-cinq/shift-log@latest")
+		fmt.Println("  Install with: go install github.com/TranscriptionFactory/shift-log@latest")
 		hasErrors = true
 	} else {
 		fmt.Println("OK")

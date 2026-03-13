@@ -1,10 +1,10 @@
 ## ADDED Requirements
 
 ### Requirement: Homebrew Tap Installation
-The project SHALL publish a Homebrew formula to a tap repository so that users can install shiftlog via `brew install re-cinq/tap/shiftlog`.
+The project SHALL publish a Homebrew formula to a tap repository so that users can install shiftlog via `brew install TranscriptionFactory/tap/shiftlog`.
 
 #### Scenario: Fresh install via Homebrew
-- **WHEN** a user runs `brew install re-cinq/tap/shiftlog`
+- **WHEN** a user runs `brew install TranscriptionFactory/tap/shiftlog`
 - **THEN** the latest released version of the shiftlog binary is installed and available on their PATH
 
 #### Scenario: Upgrade via Homebrew

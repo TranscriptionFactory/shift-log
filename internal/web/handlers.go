@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	agentclaude "github.com/re-cinq/shift-log/internal/agent/claude"
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/storage"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	agentclaude "github.com/TranscriptionFactory/shift-log/internal/agent/claude"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/storage"
 )
 
 // CommitInfo represents commit data for the API

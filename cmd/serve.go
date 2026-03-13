@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/web"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/web"
 	"github.com/spf13/cobra"
 )
 

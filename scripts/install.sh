@@ -12,7 +12,7 @@
 set -e
 
 GITHUB_REPO="TranscriptionFactory/shift-log"
-BINARY_NAME="shiftlog"
+BINARY_NAME="shift=log"
 GO_MODULE="github.com/TranscriptionFactory/shift-log"
 MIN_GO_MAJOR=1
 MIN_GO_MINOR=24
@@ -297,7 +297,7 @@ build_from_source() {
         return 1
     fi
 
-    cd "$BINARY_NAME"
+    cd "$tmp_dir"
     log_info "Building binary..."
 
     if ! CGO_ENABLED=0 go build -o "$BINARY_NAME" .; then

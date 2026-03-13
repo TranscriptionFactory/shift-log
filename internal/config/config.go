@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/re-cinq/shift-log/internal/util"
+	"github.com/TranscriptionFactory/shift-log/internal/util"
 )
 
 const configFile = "config"

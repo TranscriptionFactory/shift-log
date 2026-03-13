@@ -31,7 +31,7 @@ func findProjectRoot() string {
 // shiftlog-named asset (i.e. published after the claudit → shiftlog rename).
 func hasGitHubRelease() bool {
 	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get("https://api.github.com/repos/re-cinq/shift-log/releases/latest")
+	resp, err := client.Get("https://api.github.com/repos/TranscriptionFactory/shift-log/releases/latest")
 	if err != nil {
 		return false
 	}
@@ -49,7 +49,7 @@ func TestInstallScript(t *testing.T) {
 	}
 
 	if !hasGitHubRelease() {
-		t.Skip("no published GitHub release found for re-cinq/shift-log, skipping install script test")
+		t.Skip("no published GitHub release found for TranscriptionFactory/shift-log, skipping install script test")
 	}
 
 	root := findProjectRoot()

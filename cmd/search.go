@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/git"
-	"github.com/re-cinq/shift-log/internal/storage"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/storage"
 	"github.com/spf13/cobra"
 )
 

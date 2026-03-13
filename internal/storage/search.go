@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/re-cinq/shift-log/internal/agent"
-	"github.com/re-cinq/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/agent"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
 )
 
 // SearchParams defines the parameters for searching conversations.

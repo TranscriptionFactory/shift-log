@@ -1,4 +1,4 @@
-module github.com/re-cinq/shift-log
+module github.com/TranscriptionFactory/shift-log
 
 go 1.24
 

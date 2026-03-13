@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/re-cinq/shift-log/internal/cli"
-	"github.com/re-cinq/shift-log/internal/git"
+	"github.com/TranscriptionFactory/shift-log/internal/cli"
+	"github.com/TranscriptionFactory/shift-log/internal/git"
 	"github.com/spf13/cobra"
 )
 
