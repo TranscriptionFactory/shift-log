@@ -427,38 +427,38 @@ main() {
     platform=$(detect_platform)
     log_info "Platform: $platform"
 
-    # Try downloading from GitHub releases first
-    if install_from_release "$platform"; then
-        verify_installation
-        exit 0
-    fi
+    # # Try downloading from GitHub releases first
+    # if install_from_release "$platform"; then
+    #     verify_installation
+    #     exit 0
+    # fi
 
-    log_warning "Failed to install from releases, trying alternative methods..."
+    # log_warning "Failed to install from releases, trying alternative methods..."
 
-    # Try go install as fallback
-    if check_go; then
-        if install_with_go; then
-            verify_installation
-            exit 0
-        fi
-    fi
+    # # Try go install as fallback
+    # if check_go; then
+    #     if install_with_go; then
+    #         verify_installation
+    #         exit 0
+    #     fi
+    # fi
 
-    # Try building from source as last resort
-    log_warning "Falling back to building from source..."
+    # # Try building from source as last resort
+    # log_warning "Falling back to building from source..."
 
-    if ! check_go; then
-        log_warning "Go is not installed"
-        echo ""
-        echo "$BINARY_NAME requires Go ${MIN_GO_MAJOR}.${MIN_GO_MINOR} or later to build from source. You can:"
-        echo "  1. Install Go from https://go.dev/dl/"
-        echo "  2. Use your package manager:"
-        echo "     - macOS: brew install go"
-        echo "     - Ubuntu/Debian: sudo apt install golang"
-        echo "     - Other Linux: Check your distro's package manager"
-        echo ""
-        echo "After installing Go, run this script again."
-        exit 1
-    fi
+    # if ! check_go; then
+    #     log_warning "Go is not installed"
+    #     echo ""
+    #     echo "$BINARY_NAME requires Go ${MIN_GO_MAJOR}.${MIN_GO_MINOR} or later to build from source. You can:"
+    #     echo "  1. Install Go from https://go.dev/dl/"
+    #     echo "  2. Use your package manager:"
+    #     echo "     - macOS: brew install go"
+    #     echo "     - Ubuntu/Debian: sudo apt install golang"
+    #     echo "     - Other Linux: Check your distro's package manager"
+    #     echo ""
+    #     echo "After installing Go, run this script again."
+    #     exit 1
+    # fi
 
     if build_from_source; then
         verify_installation
